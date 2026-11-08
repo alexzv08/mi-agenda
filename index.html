@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi Agenda</title>
+<meta name="description" content="Calendario, hábitos diarios, tareas, notas y métricas.">
+<meta name="theme-color" content="#2D47D6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mi Agenda">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+</head>
+<body>
+<div class="auth" id="auth" hidden>
+  <form class="auth-card" id="auth-form" novalidate>
+    <span class="eyebrow">Mi agenda</span>
+    <h1 id="auth-title">Entra en tu agenda</h1>
+    <p class="auth-sub" id="auth-sub">Tus hábitos, tareas y notas, en el móvil y en el ordenador.</p>
+    <label for="auth-email">Correo</label>
+    <input id="auth-email" type="email" autocomplete="email" required>
+    <label for="auth-pass">Contraseña</label>
+    <input id="auth-pass" type="password" autocomplete="current-password" minlength="6" required>
+    <button class="btn" type="submit" id="auth-submit">Entrar</button>
+    <p class="auth-msg" id="auth-msg" role="status"></p>
+    <button class="ghost" type="button" id="auth-switch">¿No tienes cuenta? Crear una</button>
+  </form>
+</div>
+<div class="auth" id="setup" hidden>
+  <div class="auth-card">
+    <span class="eyebrow">Configuración pendiente</span>
+    <h1>Falta conectar Supabase</h1>
+    <p class="auth-sub">Añade las variables <code>VITE_SUPABASE_URL</code> y <code>VITE_SUPABASE_ANON_KEY</code> en Vercel (o en un archivo <code>.env</code> en local) y vuelve a publicar. Los pasos están en el README.</p>
+  </div>
+</div>
+<div class="wrap" id="app" hidden>
+  <header class="top">
+    <div class="brand">
+      <span class="eyebrow">Mi agenda</span>
+      <h1 id="hello">Hoy</h1>
+    </div>
+    <nav class="tabs" aria-label="Secciones">
+      <a href="#agenda" id="tab-agenda" aria-current="page">Agenda</a>
+      <a href="#semana" id="tab-semana">Semana</a>
+      <a href="#metricas" id="tab-metricas">Métricas</a>
+    </nav>
+    <div class="stats" aria-label="Resumen de hoy">
+      <div class="stat"><b id="st-hab">0/0</b><span>hábitos hoy</span></div>
+      <div class="stat"><b id="st-todo">0</b><span>tareas pendientes</span></div>
+      <div class="stat"><b id="st-streak">0 d</b><span>mejor racha</span></div>
+    </div>
+    <div class="sync" id="sync" data-s="warn"><i></i><span id="sync-t">Cargando tus datos…</span><span class="who" id="who"></span><button class="ghost" id="logout" type="button">Cerrar sesión</button></div>
+  </header>
+
+  <div class="mview" id="v-semana" hidden>
+    <div id="plan-card"></div>
+    <div class="filters">
+      <h2 id="wk-title">Semana</h2>
+      <div class="cal-nav">
+        <button class="icon-btn" id="prev-w" aria-label="Semana anterior">‹</button>
+        <button class="icon-btn" id="this-w">Esta semana</button>
+        <button class="icon-btn" id="next-w" aria-label="Semana siguiente">›</button>
+      </div>
+    </div>
+    <section class="panel">
+      <div class="panel-h">
+        <h2>Hábitos de la semana</h2>
+        <div class="row"><span class="streak" id="wk-n"></span><button class="btn sec" id="wk-edit" aria-pressed="false">Editar días</button></div>
+      </div>
+      <div class="tbl-wrap"><table class="wk"><thead id="wk-head"></thead><tbody id="wk-body"></tbody></table></div>
+      <div class="chart-sub" id="wk-hint" style="margin-top:0">Marca cada hábito el día que lo hagas. Con «Editar días» eliges qué días toca cada uno y en qué momento del día.</div>
+    </section>
+    <section class="panel">
+      <h2>Tareas de la semana</h2>
+      <div class="wk-days" id="wk-days"></div>
+    </section>
+  </div>
+
+  <div class="mview" id="v-metricas" hidden>
+    <div class="filters">
+      <h2>Tus métricas</h2>
+      <div class="seg" role="group" aria-label="Periodo">
+        <button data-range="7" aria-pressed="false">7 días</button>
+        <button data-range="30" aria-pressed="true">30 días</button>
+        <button data-range="90" aria-pressed="false">90 días</button>
+      </div>
+    </div>
+    <div class="tiles" id="m-tiles"></div>
+    <div class="mgrid">
+      <section class="panel">
+        <h2>Cumplimiento diario de hábitos</h2>
+        <div class="chart-sub">Porcentaje de hábitos hechos cada día. En verde, los días perfectos.</div>
+        <div id="m-daily"></div>
+      </section>
+      <section class="panel">
+        <h2>Por día de la semana</h2>
+        <div class="chart-sub">Media de cumplimiento en el periodo. Así ves qué días te cuestan más.</div>
+        <div class="hbars" id="m-dow"></div>
+      </section>
+    </div>
+    <section class="panel">
+      <div class="panel-h"><h2>Constancia de las últimas 20 semanas</h2>
+        <div class="scale" aria-hidden="true">Menos <i style="background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line)"></i><i style="background:var(--seq1)"></i><i style="background:var(--seq2)"></i><i style="background:var(--seq3)"></i><i style="background:var(--seq4)"></i> Más</div></div>
+      <div class="heat-wrap"><div class="heat-row"><div class="heat-dow"><span>L</span><span></span><span>X</span><span></span><span>V</span><span></span><span>D</span></div><div class="heat" id="m-heat"></div></div></div>
+    </section>
+    <section class="panel">
+      <h2>Cada hábito</h2>
+      <div class="tbl-wrap"><table class="ht"><thead><tr><th>Hábito</th><th>Cumplimiento</th><th class="num">Días</th><th class="num">Racha actual</th><th class="num">Mejor racha</th></tr></thead><tbody id="m-habits"></tbody></table></div>
+    </section>
+    <section class="panel">
+      <h2>Tareas completadas por semana</h2>
+      <div class="chart-sub">Últimas 12 semanas, de lunes a domingo.</div>
+      <div id="m-weeks"></div>
+    </section>
+  </div>
+
+  <div class="grid" id="v-agenda">
+    <div class="col">
+      <section class="panel" aria-labelledby="cal-title">
+        <div class="panel-h">
+          <h2 id="cal-title">Mes</h2>
+          <div class="cal-nav">
+            <button class="icon-btn" id="prev-m" aria-label="Mes anterior">‹</button>
+            <button class="icon-btn" id="go-today">Hoy</button>
+            <button class="icon-btn" id="next-m" aria-label="Mes siguiente">›</button>
+          </div>
+        </div>
+        <div class="dow"><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div></div>
+        <div class="days" id="days"></div>
+        <div class="legend"><span><i class="k3"></i>Hoy</span><span><i class="k1"></i>Tarea con fecha</span><span><i class="k2"></i>Hábitos cumplidos</span></div>
+      </section>
+
+      <section class="panel" aria-labelledby="inbox-title">
+        <div class="panel-h"><h2 id="inbox-title">Cosas por hacer</h2><span class="streak" id="inbox-n"></span></div>
+        <form class="add" id="f-inbox">
+          <input type="text" id="in-inbox" placeholder="Apunta algo sin fecha…" autocomplete="off" aria-label="Nueva cosa por hacer">
+          <button class="btn" type="submit">Apuntar</button>
+        </form>
+        <ul class="list" id="inbox"></ul>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="panel" aria-labelledby="day-title">
+        <div class="dayhead">
+          <h2 id="day-title">Día</h2>
+          <div class="cal-nav">
+            <button class="icon-btn" id="prev-d" aria-label="Día anterior">‹</button>
+            <button class="icon-btn" id="next-d" aria-label="Día siguiente">›</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Hábitos diarios <span class="n" id="hab-n"></span></h3>
+          <div class="progress" aria-hidden="true"><b id="hab-bar" style="width:0%"></b></div>
+          <ul class="list" id="habits"></ul>
+          <form class="add" id="f-habit">
+            <input type="text" id="in-habit" placeholder="Nuevo hábito (ej. Leer 20 min)" autocomplete="off" aria-label="Nuevo hábito">
+            <select id="in-when" aria-label="Momento del día"><option value="m">Mañana</option><option value="d">Durante el día</option><option value="t">Tarde</option><option value="n">Noche</option></select>
+            <div class="daychips" id="in-days" role="group" aria-label="Días en que toca"></div>
+            <button class="btn sec" type="submit">Añadir hábito</button>
+          </form>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="section">
+          <h3>Tareas de este día <span class="n" id="todo-n"></span></h3>
+          <ul class="list" id="todos"></ul>
+          <form class="add" id="f-todo">
+            <input type="text" id="in-todo" placeholder="Añadir tarea para este día…" autocomplete="off" aria-label="Nueva tarea para este día">
+            <button class="btn" type="submit">Añadir</button>
+          </form>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="section">
+          <h3>Nota del día</h3>
+          <textarea id="note" placeholder="Ideas, recordatorios, cómo te fue el día…" aria-label="Nota del día"></textarea>
+          <div class="note-foot"><span id="note-s"></span><span id="note-c"></span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
