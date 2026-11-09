@@ -21,9 +21,20 @@ function normalizeUrl(raw) {
 
 const { url, problem: urlProblem } = normalizeUrl(import.meta.env.VITE_SUPABASE_URL);
 const key = clean(import.meta.env.VITE_SUPABASE_ANON_KEY);
+// Una clave secreta nunca debe llegar al navegador: da acceso total saltándose la seguridad.
+function isSecretKey(k) {
+  if (/^sb_secret_/i.test(k)) return true;
+  const parts = k.split('.');
+  if (parts.length === 3) {
+    try { return JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))).role === 'service_role'; } catch { return false; }
+  }
+  return false;
+}
 const keyProblem = !key
   ? 'Falta la variable VITE_SUPABASE_ANON_KEY.'
-  : /^https?:\/\//i.test(key) ? 'VITE_SUPABASE_ANON_KEY contiene una dirección web: parece que las dos variables están intercambiadas.' : '';
+  : /^https?:\/\//i.test(key) ? 'VITE_SUPABASE_ANON_KEY contiene una dirección web: parece que las dos variables están intercambiadas.'
+  : isSecretKey(key) ? 'VITE_SUPABASE_ANON_KEY tiene la clave SECRETA de Supabase. Anúlala en Supabase → API Keys y pon la Publishable key (sb_publishable_…) o la anon public.'
+  : '';
 
 export const setupProblem = urlProblem || keyProblem;
 export const configured = !setupProblem;
