@@ -19,8 +19,14 @@ function normalizeUrl(raw) {
   }
 }
 
-const { url, problem: urlProblem } = normalizeUrl(import.meta.env.VITE_SUPABASE_URL);
-const key = clean(import.meta.env.VITE_SUPABASE_ANON_KEY);
+// Valores públicos del proyecto (la clave publishable está pensada para ir en el navegador;
+// la seguridad la dan las reglas RLS de supabase/schema.sql). Las variables de entorno, si son válidas, tienen prioridad.
+const DEFAULT_URL = 'https://ltjxroxzuoxopbdzxpgh.supabase.co';
+const DEFAULT_KEY = 'sb_publishable_VAy6aOoBdd7EWx0kppsugA_ffQEIMU_';
+
+const envUrl = normalizeUrl(import.meta.env.VITE_SUPABASE_URL);
+const { url, problem: urlProblem } = envUrl.problem ? normalizeUrl(DEFAULT_URL) : envUrl;
+const envKey = clean(import.meta.env.VITE_SUPABASE_ANON_KEY);
 // Una clave secreta nunca debe llegar al navegador: da acceso total saltándose la seguridad.
 function isSecretKey(k) {
   if (/^sb_secret_/i.test(k)) return true;
@@ -30,6 +36,9 @@ function isSecretKey(k) {
   }
   return false;
 }
+const envKeyOk = envKey && !/^https?:\/\//i.test(envKey) && !isSecretKey(envKey);
+if (envKey && !envKeyOk) console.warn('VITE_SUPABASE_ANON_KEY no es válida (¿clave secreta?). Se usa la clave publishable integrada.');
+const key = envKeyOk ? envKey : DEFAULT_KEY;
 const keyProblem = !key
   ? 'Falta la variable VITE_SUPABASE_ANON_KEY.'
   : /^https?:\/\//i.test(key) ? 'VITE_SUPABASE_ANON_KEY contiene una dirección web: parece que las dos variables están intercambiadas.'
