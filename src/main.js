@@ -1,5 +1,5 @@
 import './styles.css';
-import { supabase, configured } from './supabase.js';
+import { supabase, configured, setupProblem } from './supabase.js';
 import { startApp } from './app.js';
 
 const $ = id => document.getElementById(id);
@@ -41,7 +41,11 @@ function setMode(m) {
 }
 
 async function boot() {
-  if (!configured) { $('setup').hidden = false; return; }
+  if (!configured || !supabase) {
+    $('setup').hidden = false;
+    $('setup-problem').textContent = setupProblem || 'No se pudo conectar con Supabase. Revisa las dos variables.';
+    return;
+  }
 
   $('auth-switch').onclick = () => setMode(mode === 'login' ? 'signup' : 'login');
   $('auth-form').onsubmit = async e => {

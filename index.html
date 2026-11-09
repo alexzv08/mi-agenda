@@ -36,7 +36,8 @@
   <div class="auth-card">
     <span class="eyebrow">Configuración pendiente</span>
     <h1>Falta conectar Supabase</h1>
-    <p class="auth-sub">Añade las variables <code>VITE_SUPABASE_URL</code> y <code>VITE_SUPABASE_ANON_KEY</code> en Vercel (o en un archivo <code>.env</code> en local) y vuelve a publicar. Los pasos están en el README.</p>
+    <p class="auth-msg err" id="setup-problem"></p>
+    <p class="auth-sub">Revisa las variables <code>VITE_SUPABASE_URL</code> y <code>VITE_SUPABASE_ANON_KEY</code> en Vercel → Settings → Environment Variables, y después haz Redeploy. Los valores están en Supabase → Project Settings → API. Los pasos están en el README.</p>
   </div>
 </div>
 <div class="wrap" id="app" hidden>
